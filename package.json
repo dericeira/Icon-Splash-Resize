@@ -1,6 +1,6 @@
 {
   "name": "icon-splash-resize",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Automatic resizing for icons and splash screen (iOS and Android)",
   "main": "index.js",
   "scripts": {
