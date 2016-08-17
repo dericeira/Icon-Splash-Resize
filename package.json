@@ -1,0 +1,24 @@
+{
+  "name": "icon-splash-resize",
+  "version": "1.0.3",
+  "description": "Automatic resizing for icons and splash screen (iOS and Android)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "resize",
+    "splash",
+    "screen",
+    "icon",
+    "android",
+    "ios"
+  ],
+  "author": "Daniel Campos",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {
+    "async": "^2.0.1",
+    "gm": "*"
+  }
+}
