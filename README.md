@@ -11,7 +11,7 @@ You can install with homebew:
 
 Then,
 
-    npm install gm
+    npm install icon-splash-resize 
 
 or clone the git
 
