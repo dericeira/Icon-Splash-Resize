@@ -17,6 +17,7 @@ or clone the git
 
 	git clone https://github.com/dericeira/Icon-Splash-Resize.git
 
+You also can watch the [Video tutorial](https://www.youtube.com/watch?v=z6pfzgm53h0).
 
 ## Basic usage
 
