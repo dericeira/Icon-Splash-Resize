@@ -1,7 +1,8 @@
 //init
 var fs = require('fs')
   , gm = require('gm')
-  , async = require('async');
+  , async = require('async')
+	, path = require('path');
 
 
 //iOS Icons
@@ -66,6 +67,7 @@ const android_splash_info = {
 
 
 
+
 //Default icon
 const icon = gm('resources/icon.png');
 const splash = gm('resources/splash.png');
@@ -87,18 +89,87 @@ var objSize = function(obj) {
     }
     return size;
 };
+
+/**
+ * Read from one file and copy to destination if destination folder exists
+ * @param {src} source file
+ * @param {dest} destination file
+ * @param {callback} async callback
+ */
+var copyFile = function (src, dest, next) {
+		fs.readFile(src, function (err, data) {
+			if (err) {
+				console.error(err);
+				return next(err);
+			}
+
+			if (fs.existsSync(dest)) {
+				fs.unlinkSync(dest);
+			}
+			var dest_folder = path.dirname(dest);
+			if (fs.existsSync(dest_folder)) {
+				fs.writeFile(dest, data, function (err) {
+					if (err) {
+						console.error(err);
+						return next(err);
+					}
+					console.log("Copied %s to %s", src, dest);
+
+					next(null);
+				});
+			}else {
+				console.log('%s will not be copied', src);
+				next(null);
+			}
+
+		});
+
+
+};
+
+/**
+ * Attempt to copy generated files to mipmap folders
+ * @param {keys} generated assets
+ * @param {src} source where generated assets are
+ * @param {dest} destination folder
+ * @param {callback} async callback
+ */
+var copyAndroidMipMap = function (keys, src, dest, callback) {
+	var reg = /\-(\w+)\-(\w+)\.png$/;
+	async.each(keys, function (key, next) {
+		var idx = key.lastIndexOf('-');
+
+		var sourceFile = src + '/' + key;
+
+		var file = key.substring(idx + 1);
+
+		var size = (reg.exec(key))[1];
+
+		var dest_folder = dest + '/mipmap-' + size;
+
+		var dest_file = dest_folder  + '/' + file;
+
+		if (fs.existsSync(dest_folder)) {
+			copyFile(sourceFile, dest_file, next);
+		}else {
+			next(null);
+		}
+	}, callback);
+};
+
+
 /**
 * Distribute assets to correct android folders
 * @param {keys} the keys of one of the android asset map above\
 * @param {src} the source folder where generated asset should be found e.g './resources/android/icon' or './resources/android/splash'
 * @param {dest} the root folder for android resources. For ionic projects the relative is usually '../../platforms/android/res'
+* @param {copy_mipmap} if true then attempt is made to copy generated asset to appropriate mipmap folder
 * @param {callback} callback method from async
 * */
-var distributeFrom = function (keys, src, dest, callback) {
+var distributeFrom = function (keys, src, dest, copy_mipmap, callback) {
 	async.each(keys, function (key, next) {
 		var idx = key.lastIndexOf('-');
-    // The key is made up of the target folder dash the filename therefore the apropriate action
-    // is to extract the filename, user the prefix as subfolder appended to the dest argument
+
 		var sourceFile = src + '/' + key;
 
 		var file = key.substring(idx + 1);
@@ -109,44 +180,29 @@ var distributeFrom = function (keys, src, dest, callback) {
 
 		console.log("Reading from %s to store at %s", sourceFile, dest_file);
 
-		fs.readFile(sourceFile, function (err, data) {
-			if (err) {
-				console.error(err);
-				return next(err);
-			}
+		copyFile(sourceFile, dest_file, next);
+	}, function (err) {
+		if (err) {
+			return callback(err);
+		}
 
-			if (fs.existsSync(dest_file)) {
-				fs.unlinkSync(dest_file);
-			}
-			if (fs.existsSync(dest_folder)) {
-				fs.writeFile(dest_file, data, function (err) {
-					if (err) {
-						console.error(err);
-						return next(err);
-					}
-					console.log("Copied %s to %s", sourceFile, dest_file);
+		if (copy_mipmap) {
+			return copyAndroidMipMap(keys, src, dest, callback);
+		}
 
-					next(null);
-				});
-			}else {
-				console.log('%s will not be copied', sourceFile);
-				next(null);
-			}
-
-		});
-
-	}, callback);
+		callback(null);
+	});
 
 
 };
 
-// Distribute respective android drawables to their respective folders
+
 var distributeAndroidAssets = function (callback) {
 	console.log('Distributing android assets...');
 	var dest_path = '../../platforms/android/res';
-	distributeFrom(Object.keys(android_icon_info), './resources/android/icon', dest_path, function (err) {
+	distributeFrom(Object.keys(android_icon_info), './resources/android/icon', dest_path, true, function (err) {
 		if (!err) {
-			distributeFrom(Object.keys(android_splash_info), './resources/android/splash', dest_path, callback);
+			distributeFrom(Object.keys(android_splash_info), './resources/android/splash', dest_path, false, callback);
 		}else {
 			callback(err);
 		}
