@@ -87,6 +87,71 @@ var objSize = function(obj) {
     }
     return size;
 };
+/**
+* Distribute assets to correct android folders
+* @param {keys} the keys of one of the android asset map above\
+* @param {src} the source folder where generated asset should be found e.g './resources/android/icon' or './resources/android/splash'
+* @param {dest} the root folder for android resources. For ionic projects the relative is usually '../../platforms/android/res'
+* @param {callback} callback method from async
+* */
+var distributeFrom = function (keys, src, dest, callback) {
+	async.each(keys, function (key, next) {
+		var idx = key.lastIndexOf('-');
+    // The key is made up of the target folder dash the filename therefore the apropriate action
+    // is to extract the filename, user the prefix as subfolder appended to the dest argument
+		var sourceFile = src + '/' + key;
+
+		var file = key.substring(idx + 1);
+
+		var dest_folder = dest + '/' + key.substring(0, idx);
+
+		var dest_file = dest_folder  + '/' + file;
+
+		console.log("Reading from %s to store at %s", sourceFile, dest_file);
+
+		fs.readFile(sourceFile, function (err, data) {
+			if (err) {
+				console.error(err);
+				return next(err);
+			}
+
+			if (fs.existsSync(dest_file)) {
+				fs.unlinkSync(dest_file);
+			}
+			if (fs.existsSync(dest_folder)) {
+				fs.writeFile(dest_file, data, function (err) {
+					if (err) {
+						console.error(err);
+						return next(err);
+					}
+					console.log("Copied %s to %s", sourceFile, dest_file);
+
+					next(null);
+				});
+			}else {
+				console.log('%s will not be copied', sourceFile);
+				next(null);
+			}
+
+		});
+
+	}, callback);
+
+
+};
+
+// Distribute respective android drawables to their respective folders
+var distributeAndroidAssets = function (callback) {
+	console.log('Distributing android assets...');
+	var dest_path = '../../platforms/android/res';
+	distributeFrom(Object.keys(android_icon_info), './resources/android/icon', dest_path, function (err) {
+		if (!err) {
+			distributeFrom(Object.keys(android_splash_info), './resources/android/splash', dest_path, callback);
+		}else {
+			callback(err);
+		}
+	});
+};
 
 
 // the script will resize and remove EXIF profile data
@@ -132,7 +197,7 @@ async.series([
 		},
 		function (err) {
 		  callback(null, 'ICON IOS');
-		});     
+		});
     },
     function(callback) {
 	    console.log("\nGenerating Android Icons");
@@ -208,7 +273,8 @@ async.series([
 		function (err) {
 		  callback(null, 'SPLASH ANDROID');
 		});
-	}
+	},
+	distributeAndroidAssets
 ],
 // optional callback
 function(err, results) {
