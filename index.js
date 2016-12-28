@@ -397,7 +397,8 @@ async.series([
 		  callback(null, 'SPLASH ANDROID');
 		});
 	},
-	distributeAndroidAssets
+	distributeAndroidAssets,
+  distributeIOSAssets
 ],
 // optional callback
 function(err, results) {
