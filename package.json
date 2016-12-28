@@ -19,6 +19,7 @@
   "devDependencies": {},
   "dependencies": {
     "async": "^2.0.1",
-    "gm": "*"
+    "gm": "*",
+    "sax": "1.2.1"
   }
 }
