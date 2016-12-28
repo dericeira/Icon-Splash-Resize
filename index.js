@@ -266,7 +266,7 @@ var distributeIOSAssets = function (callback) {
     }
   });
 
-  stream = fs.createReadStream('../config.xml')
+  stream = fs.createReadStream('../../config.xml')
   .pipe(parser);
 
   stream.on('close', function () {
