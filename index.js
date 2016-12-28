@@ -69,8 +69,8 @@ const android_splash_info = {
 
 
 //Default icon
-const icon = gm('resources/icon.png');
-const splash = gm('resources/splash.png');
+const icon = gm('../resources/icon.png');
+const splash = gm('../resources/splash.png');
 
 var splash_width; //splash screen source width
 splash.size(function (err, size) {
@@ -281,10 +281,10 @@ var distributeIOSAssets = function (callback) {
 
 async.series([
 	function(callback) {
-		if (!fs.existsSync('resources/icon.png')) {
+		if (!fs.existsSync('../resources/icon.png')) {
 		    console.log("ERROR: Missing 'icon.png' file in resources folder.");
 		}
-		else if (!fs.existsSync('resources/splash.png')) {
+		else if (!fs.existsSync('../resources/splash.png')) {
 		    console.log("ERROR: Missing 'splash.png' file in resources folder.");
 		}
 		else {
