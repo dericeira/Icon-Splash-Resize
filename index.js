@@ -69,8 +69,8 @@ const android_splash_info = {
 
 
 //Default icon
-const icon = gm('resources/icon.png');
-const splash = gm('resources/splash.png');
+const icon = gm('../../resources/icon.png');
+const splash = gm('../../resources/splash.png');
 
 var splash_width; //splash screen source width
 splash.size(function (err, size) {
@@ -209,15 +209,82 @@ var distributeAndroidAssets = function (callback) {
 	});
 };
 
+var distributeIOSAssetsForProject = function (project, done) {
+    console.log('Distributing iOS assets for project: \'%s\'...', project);
+    var collection = [
+      {
+          assets: Object.keys(ios_splash_info),
+          src : './resources/ios/splash',
+          dest: '../../platforms/ios/' + project + '/Images.xcassets/LaunchImage.launchimage'
+      }, {
+        assets: Object.keys(ios_icon_info),
+        src : './resources/ios/icon',
+        dest: '../../platforms/ios/' + project + '/Images.xcassets/AppIcon.appiconset'
+      }
+    ];
+    async.each(collection, function (info, next) {
+      async.each(info.assets, function (asset, nextAsset) {
+        var src = info.src + '/' + asset,
+            dest = info.dest + '/' + asset;
+        copyFile(src, dest, nextAsset);
+      }, next);
+    }, done);
+};
+
+
+var distributeIOSAssets = function (callback) {
+  var parser = require('sax').createStream(true, {
+    trim: true,
+    lowercase: true,
+    xmlns: false,
+    position: false
+  });
+
+  var stream;
+
+  // first parse and locate the project name so that we can guess what the project name xcode will use
+  var tag_path = '', handled = false;
+
+  parser.on('opentag', function (tag) {
+    if (!handled) {
+        tag_path += '/' + tag.name;
+    }
+  });
+
+  parser.on('text', function (text) {
+    if (!handled) {
+      if ('/widget/name' == tag_path) {
+          handled = true;
+          if (stream) {
+            try {
+              stream.close();
+            }catch(ex) {}
+          }
+
+          distributeIOSAssetsForProject(text, callback);
+      }
+    }
+  });
+
+  stream = fs.createReadStream('../../config.xml')
+  .pipe(parser);
+
+  stream.on('close', function () {
+    if (!handled) {
+      callback(new Error('Could not find project name in config'));
+    }
+  });
+};
+
 
 // the script will resize and remove EXIF profile data
 
 async.series([
 	function(callback) {
-		if (!fs.existsSync('resources/icon.png')) {
+		if (!fs.existsSync('../../resources/icon.png')) {
 		    console.log("ERROR: Missing 'icon.png' file in resources folder.");
 		}
-		else if (!fs.existsSync('resources/splash.png')) {
+		else if (!fs.existsSync('../../resources/splash.png')) {
 		    console.log("ERROR: Missing 'splash.png' file in resources folder.");
 		}
 		else {
@@ -330,7 +397,8 @@ async.series([
 		  callback(null, 'SPLASH ANDROID');
 		});
 	},
-	distributeAndroidAssets
+	distributeAndroidAssets,
+  distributeIOSAssets
 ],
 // optional callback
 function(err, results) {
